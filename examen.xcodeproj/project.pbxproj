@@ -6,6 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F2E1AF402ED8FC4D008C51DE /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = F2E1AF3F2ED8FC4D008C51DE /* SDWebImageSwiftUI */; };
+		F2E1AF422ED8FC51008C51DE /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = F2E1AF412ED8FC51008C51DE /* Alamofire */; };
+		F2E1AF442ED8FC53008C51DE /* FlowStacks in Frameworks */ = {isa = PBXBuildFile; productRef = F2E1AF432ED8FC53008C51DE /* FlowStacks */; };
+
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		F2E1AEE82ED8F54D008C51DE /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -22,6 +29,19 @@
 			remoteInfo = examen;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F2E1AF472ED8FC5A008C51DE /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		F2E1AEDA2ED8F54B008C51DE /* examen.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = examen.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -52,6 +72,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F2E1AF402ED8FC4D008C51DE /* SDWebImageSwiftUI in Frameworks */,
+
+				F2E1AF422ED8FC51008C51DE /* Alamofire in Frameworks */,
+				F2E1AF442ED8FC53008C51DE /* FlowStacks in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +102,7 @@
 				F2E1AEDC2ED8F54B008C51DE /* examen */,
 				F2E1AEEA2ED8F54D008C51DE /* examenTests */,
 				F2E1AEF42ED8F54D008C51DE /* examenUITests */,
+				F2E1AF3C2ED8FC22008C51DE /* Frameworks */,
 				F2E1AEDB2ED8F54B008C51DE /* Products */,
 			);
 			sourceTree = "<group>";
@@ -92,6 +117,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		F2E1AF3C2ED8FC22008C51DE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -102,6 +134,7 @@
 				F2E1AED62ED8F54B008C51DE /* Sources */,
 				F2E1AED72ED8F54B008C51DE /* Frameworks */,
 				F2E1AED82ED8F54B008C51DE /* Resources */,
+				F2E1AF472ED8FC5A008C51DE /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -112,6 +145,10 @@
 			);
 			name = examen;
 			packageProductDependencies = (
+				F2E1AF3F2ED8FC4D008C51DE /* SDWebImageSwiftUI */,
+				F2E1AF412ED8FC51008C51DE /* Alamofire */,
+				F2E1AF432ED8FC53008C51DE /* FlowStacks */,
+
 			);
 			productName = examen;
 			productReference = F2E1AEDA2ED8F54B008C51DE /* examen.app */;
@@ -195,6 +232,11 @@
 			);
 			mainGroup = F2E1AED12ED8F54B008C51DE;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F2E1AF392ED8FBFF008C51DE /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */,
+				F2E1AF3A2ED8FC0E008C51DE /* XCRemoteSwiftPackageReference "Alamofire" */,
+				F2E1AF3B2ED8FC18008C51DE /* XCRemoteSwiftPackageReference "FlowStacks" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F2E1AEDB2ED8F54B008C51DE /* Products */;
 			projectDirPath = "";
@@ -570,6 +612,52 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F2E1AF392ED8FBFF008C51DE /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SDWebImage/SDWebImageSwiftUI";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.1.4;
+			};
+		};
+		F2E1AF3A2ED8FC0E008C51DE /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.9.0;
+			};
+		};
+		F2E1AF3B2ED8FC18008C51DE /* XCRemoteSwiftPackageReference "FlowStacks" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/johnpatrickmorgan/FlowStacks";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.10.12;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F2E1AF3F2ED8FC4D008C51DE /* SDWebImageSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2E1AF392ED8FBFF008C51DE /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */;
+			productName = SDWebImageSwiftUI;
+		};
+		F2E1AF412ED8FC51008C51DE /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2E1AF3A2ED8FC0E008C51DE /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
+		F2E1AF432ED8FC53008C51DE /* FlowStacks */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2E1AF3B2ED8FC18008C51DE /* XCRemoteSwiftPackageReference "FlowStacks" */;
+			productName = FlowStacks;
+		};
+
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F2E1AED22ED8F54B008C51DE /* Project object */;
 }
