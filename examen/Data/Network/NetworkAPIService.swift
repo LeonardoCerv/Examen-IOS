@@ -4,59 +4,39 @@ import Alamofire
 class NetworkAPIService {
     static let shared = NetworkAPIService()
     
-    // API Key hardcoded for this exam as requested
     private let headers: HTTPHeaders = [
         "X-Api-Key": "tcFfqUyNe3kJYVyVcqk0Dw==BwrNX6k8ZMYJjUSQ"
     ]
-
-    func getCatalog(url: URL, limit: Int?) async -> ItemCatalog? {
-        // La API devuelve un Array de objetos, no un objeto con "results".
-        // Hacemos el request y parseamos manualmente para adaptar a ItemCatalog.
+    
+    // Obtener snapshot global de países para una fecha específica y tipo (cases o deaths)
+    func getSnapshot(date: String, type: String) async -> [CovidSnapshotResponse]? {
+        var params: Parameters = ["date": date, "type": type]
         
-        let response = await AF.request(url, method: .get, headers: headers)
+        guard let url = URL(string: "https://api.api-ninjas.com/v1/covid19") else { return nil }
+        
+        let response = await AF.request(url, method: .get, parameters: params, headers: headers)
             .validate()
             .serializingData()
             .response
         
         switch response.result {
         case .success(let data):
-            do {
-                let regions = try JSONDecoder().decode([CovidRegionResponse].self, from: data)
-                
-                // Mapeamos a ItemRef
-                let refs = regions.map { regionData in
-                    // Construimos una URL para el detalle que incluya la región
-                    // Ojo: La URL original ya traía el país.
-                    // Para el detalle, si la API soporta filtrar por región, ideal.
-                    // Si no, el repositorio mandará la misma URL y filtraremos aquí o en el repo.
-                    // Asumiremos que el Repo construye la URL correcta para el detalle.
-                    // Aquí solo creamos el Ref.
-                    
-                    // Hack: Guardamos el nombre de la región en la URL como query param simulado o real
-                    // para que al pedir detalle sepamos cuál es.
-                    // Pero el enunciado dice "url: String // apunta al endpoint de detalle del ítem"
-                    
-                    ItemRef(name: regionData.region.isEmpty ? regionData.country : regionData.region,
-                            url: url.absoluteString + "&region=" + (regionData.region.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""))
-                }
-                
-                return ItemCatalog(count: refs.count, results: refs)
-            } catch {
-                debugPrint("Error decoding catalog: \(error)")
-                return nil
-            }
-            
+            return try? JSONDecoder().decode([CovidSnapshotResponse].self, from: data)
         case .failure(let err):
-            debugPrint(err.localizedDescription)
+            debugPrint("Error snapshot: \(err.localizedDescription)")
+            if let data = response.data, let str = String(data: data, encoding: .utf8) {
+                debugPrint("Response: \(str)")
+            }
             return nil
         }
     }
 
+    func getCatalog(url: URL, limit: Int?) async -> ItemCatalog? {
+        // No se usa en el nuevo flujo, pero mantenemos por compatibilidad
+        return nil
+    }
+
     func getItemDetail(url: URL) async -> ItemDetail? {
-        // Aquí esperamos una URL que ya tenga el filtro de región si es posible,
-        // o si es la misma URL, traerá todo y tendremos que filtrar.
-        // API Ninjas soporta `&region=Alberta`.
-        
         let response = await AF.request(url, method: .get, headers: headers)
             .validate()
             .serializingData()
@@ -65,38 +45,46 @@ class NetworkAPIService {
         switch response.result {
         case .success(let data):
             do {
-                let regions = try JSONDecoder().decode([CovidRegionResponse].self, from: data)
+                let countries = try JSONDecoder().decode([CovidCountryResponse].self, from: data)
                 
-                // Si la URL tenía filtro de región, debería venir 1 solo elemento (o pocos).
-                // Tomamos el primero.
-                guard let regionData = regions.first else { return nil }
+                // Agregar todos los datos de todas las regiones del país
+                var allCases: [String: Int] = [:]
+                var allDeaths: [String: Int] = [:]
+                let countryName = countries.first?.country ?? ""
                 
-                // Mapeamos cases a stats
-                var stats: [StatPair] = []
-                if let cases = regionData.cases {
-                    let sortedKeys = cases.keys.sorted()
-                    stats = sortedKeys.map { dateKey in
-                        StatPair(name: dateKey, value: cases[dateKey]?.total ?? 0)
+                for countryData in countries {
+                    // Sumar casos de todas las regiones por fecha
+                    if let cases = countryData.cases {
+                        for (date, caseData) in cases {
+                            allCases[date, default: 0] += caseData.total
+                        }
+                    }
+                    
+                    // Sumar muertes de todas las regiones por fecha
+                    if let deaths = countryData.deaths {
+                        for (date, deathData) in deaths {
+                            allDeaths[date, default: 0] += deathData.total
+                        }
                     }
                 }
                 
-                // Mapeamos deaths a deathStats
-                var deathStats: [StatPair] = []
-                if let deaths = regionData.deaths {
-                    let sortedKeys = deaths.keys.sorted()
-                    deathStats = sortedKeys.map { dateKey in
-                        StatPair(name: dateKey, value: deaths[dateKey]?.total ?? 0)
-                    }
+                // Convertir a StatPair ordenados por fecha
+                let stats = allCases.keys.sorted().map { date in
+                    StatPair(name: date, value: allCases[date] ?? 0)
+                }
+                
+                let deathStats = allDeaths.keys.sorted().map { date in
+                    StatPair(name: date, value: allDeaths[date] ?? 0)
                 }
                 
                 return ItemDetail(
-                    id: regionData.region,
-                    title: regionData.country,
-                    description: regionData.region,
-                    media: nil, // No hay imágenes en esta API
+                    id: countryName,
+                    title: countryName,
+                    description: "Datos de COVID-19",
+                    media: nil,
                     attributes: [
-                        NamedValue(name: "País", value: regionData.country),
-                        NamedValue(name: "Región", value: regionData.region)
+                        NamedValue(name: "País", value: countryName),
+                        NamedValue(name: "Total de datos", value: "\(stats.count) días")
                     ],
                     stats: stats,
                     deathStats: deathStats

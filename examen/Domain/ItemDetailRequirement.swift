@@ -1,7 +1,7 @@
 import Foundation
 
 protocol ItemDetailRequirementProtocol {
-    func getItemDetail(id: String) async -> ItemDetail? // ID adaptado a String
+    func getItemDetail(country: String) async -> ItemDetail?
 }
 
 class ItemDetailRequirement: ItemDetailRequirementProtocol {
@@ -12,7 +12,7 @@ class ItemDetailRequirement: ItemDetailRequirementProtocol {
         self.repo = repo
     }
     
-    func getItemDetail(id: String) async -> ItemDetail? {
-        await repo.getItemDetail(id: id)
+    func getItemDetail(country: String) async -> ItemDetail? {
+        await repo.getItemDetail(country: country)
     }
 }

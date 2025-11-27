@@ -1,8 +1,7 @@
 import Foundation
 
 protocol ItemListRequirementProtocol {
-    func getItemCatalog(limit: Int?) async -> ItemCatalog?
-    func setCountry(_ country: String) // Added to support country selection
+    func getItemCatalog(date: String) async -> ItemCatalog?
 }
 
 class ItemListRequirement: ItemListRequirementProtocol {
@@ -13,11 +12,7 @@ class ItemListRequirement: ItemListRequirementProtocol {
         self.repo = repo
     }
     
-    func getItemCatalog(limit: Int?) async -> ItemCatalog? {
-        await repo.getItemCatalog(limit: limit)
-    }
-    
-    func setCountry(_ country: String) {
-        repo.setCountry(country)
+    func getItemCatalog(date: String) async -> ItemCatalog? {
+        await repo.getItemCatalog(date: date)
     }
 }

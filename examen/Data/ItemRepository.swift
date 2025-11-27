@@ -8,67 +8,59 @@ struct Api {
 }
 
 protocol ItemAPIProtocol {
-    func getItemCatalog(limit: Int?) async -> ItemCatalog?
-    func getItemDetail(id: String) async -> ItemDetail? // ID es String (Region Name)
-    func getItemDetailWithType(id: String, type: String) async -> ItemDetail? // Permite especificar "cases" o "deaths"
+    func getItemCatalog(date: String) async -> ItemCatalog?
+    func getItemDetail(country: String) async -> ItemDetail?
 }
 
 class ItemRepository: ItemAPIProtocol {
     static let shared = ItemRepository()
     let nservice: NetworkAPIService
     
-    // Mantener el país seleccionado en memoria o pasarlo como argumento.
-    // El enunciado dice "el usuario debe poder escoger un pais".
-    // Para cumplir con la firma `getItemCatalog(limit: Int?)`,
-    // voy a asumir un país por defecto o usar una variable estática/inyectada.
-    // O mejor, voy a permitir que el ViewModel configure esto, pero la firma del protocolo es fija en el enunciado?
-    // "func getItemCatalog(limit: Int?) async -> ItemCatalog?" -> Sí, es fija.
-    // Voy a agregar una variable de configuración en el Repo para el país actual.
-    
-    var currentCountry: String = "Canada" // Default
-    
     init(nservice: NetworkAPIService = NetworkAPIService.shared) {
         self.nservice = nservice
     }
     
-    func setCountry(_ country: String) {
-        self.currentCountry = country
-    }
-    
-    func getItemCatalog(limit: Int?) async -> ItemCatalog? {
-        // Construimos la URL con el país actual
-        let urlStr = "\(Api.base)\(Api.routes.covid)?country=\(currentCountry)"
-        guard let url = URL(string: urlStr) else { return nil }
-        return await nservice.getCatalog(url: url, limit: limit)
-    }
-    
-    func getItemDetail(id: String) async -> ItemDetail? {
-        // ID es el nombre de la región.
-        // Construimos URL con country y region.
-        // Ojo: Si el ID viene vacío o es igual al país, pedimos solo por país (caso de países sin regiones claras o total).
-        
-        var urlStr = "\(Api.base)\(Api.routes.covid)?country=\(currentCountry)"
-        if !id.isEmpty && id != currentCountry {
-            // Asumimos que el ID es la región
-             if let encodedRegion = id.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
-                 urlStr += "&region=\(encodedRegion)"
-             }
+    func getItemCatalog(date: String) async -> ItemCatalog? {
+        // Obtener snapshot de casos y muertes para la fecha especificada
+        guard let casesData = await nservice.getSnapshot(date: date, type: "cases"),
+              let deathsData = await nservice.getSnapshot(date: date, type: "deaths") else {
+            return nil
         }
         
-        guard let url = URL(string: urlStr) else { return nil }
-        return await nservice.getItemDetail(url: url)
-    }
-    
-    func getItemDetailWithType(id: String, type: String) async -> ItemDetail? {
-        // Similar a getItemDetail pero agrega el parámetro type
-        var urlStr = "\(Api.base)\(Api.routes.covid)?country=\(currentCountry)"
-        if !id.isEmpty && id != currentCountry {
-            if let encodedRegion = id.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
-                urlStr += "&region=\(encodedRegion)"
+        // Agrupar por país (sumar todas las regiones)
+        var countryMap: [String: (cases: Int, deaths: Int, newCases: Int, newDeaths: Int)] = [:]
+        
+        for item in casesData {
+            let country = item.country
+            // Para snapshot, los datos están directamente en item.cases, no en un diccionario
+            if let casesData = item.cases {
+                countryMap[country, default: (0, 0, 0, 0)].cases += casesData.total
+                countryMap[country, default: (0, 0, 0, 0)].newCases += casesData.new
             }
         }
-        urlStr += "&type=\(type)"
         
+        for item in deathsData {
+            let country = item.country
+            // Para snapshot, los datos están directamente en item.deaths
+            if let deathsData = item.deaths {
+                countryMap[country, default: (0, 0, 0, 0)].deaths += deathsData.total
+                countryMap[country, default: (0, 0, 0, 0)].newDeaths += deathsData.new
+            }
+        }
+        
+        // Convertir a ItemRef
+        let refs = countryMap.map { (country, data) in
+            ItemRef(
+                name: country,
+                url: "\(Api.base)\(Api.routes.covid)?country=\(country.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? country)"
+            )
+        }.sorted { $0.name < $1.name }
+        
+        return ItemCatalog(count: refs.count, results: refs)
+    }
+    
+    func getItemDetail(country: String) async -> ItemDetail? {
+        let urlStr = "\(Api.base)\(Api.routes.covid)?country=\(country.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? country)"
         guard let url = URL(string: urlStr) else { return nil }
         return await nservice.getItemDetail(url: url)
     }
