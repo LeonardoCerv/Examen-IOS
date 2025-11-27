@@ -1,9 +1,8 @@
 import Foundation
 
 protocol UserServiceProtocol {
-    func getCurrentUser() -> String?
-    func setCurrentUser(email: String)
-    func removeCurrentUser()
+    func getLastCountry() -> String?
+    func setLastCountry(_ country: String)
 }
 
 class UserRepository: UserServiceProtocol {
@@ -14,15 +13,11 @@ class UserRepository: UserServiceProtocol {
         self.localService = localService
     }
     
-    func getCurrentUser() -> String? {
-        localService.getCurrentUser()
+    func getLastCountry() -> String? {
+        localService.getLastCountry()
     }
     
-    func setCurrentUser(email: String) {
-        localService.setCurrentUser(email: email)
-    }
-    
-    func removeCurrentUser() {
-        localService.removeCurrentUser()
+    func setLastCountry(_ country: String) {
+        localService.setLastCountry(country)
     }
 }

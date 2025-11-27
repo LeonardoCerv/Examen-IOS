@@ -14,11 +14,14 @@ class ItemListViewModel: ObservableObject {
     
     var listReq: ItemListRequirementProtocol
     var detailReq: ItemDetailRequirementProtocol
+    var userReq: UserRequirementProtocol
     
     init(listReq: ItemListRequirementProtocol = ItemListRequirement.shared,
-         detailReq: ItemDetailRequirementProtocol = ItemDetailRequirement.shared) {
+         detailReq: ItemDetailRequirementProtocol = ItemDetailRequirement.shared,
+         userReq: UserRequirementProtocol = UserRequirement.shared) {
         self.listReq = listReq
         self.detailReq = detailReq
+        self.userReq = userReq
     }
     
     @MainActor
@@ -102,5 +105,15 @@ class ItemListViewModel: ObservableObject {
     func changeDate(_ newDate: String) async {
         selectedDate = newDate
         await loadItems()
+    }
+    
+    // Guardar último país visitado
+    func saveLastCountry(_ countryName: String) {
+        userReq.setLastCountry(countryName)
+    }
+    
+    // Obtener último país visitado
+    func getLastCountry() -> String? {
+        return userReq.getLastCountry()
     }
 }

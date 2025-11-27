@@ -148,6 +148,10 @@ struct ContentView: View {
                     List(vm.filteredItems) { item in
                         NavigationLink {
                             ItemDetailView(country: item.ref.name)
+                                .onAppear {
+                                    // Guardar último país visitado
+                                    vm.saveLastCountry(item.ref.name)
+                                }
                         } label: {
                             HStack(spacing: 12) {
                                 // Nombre del país

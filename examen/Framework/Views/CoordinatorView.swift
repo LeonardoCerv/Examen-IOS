@@ -10,7 +10,7 @@ struct Coordinator: View {
     
     var body: some View {
         FlowStack($routes, withNavigation: true) {
-            LoginView()
+            MenuView()
                 .flowDestination(for: Screen.self) { screen in
                     switch screen {
                     case .menu:
