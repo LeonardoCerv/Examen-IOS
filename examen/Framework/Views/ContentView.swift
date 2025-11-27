@@ -4,6 +4,8 @@ import SDWebImageSwiftUI
 struct ContentView: View {
     @StateObject var vm = ItemListViewModel()
     @State private var showDatePicker = false
+    @State private var shouldNavigateToLastCountry = false
+    @State private var navigateToCountry: String?
     
     var body: some View {
         NavigationView {
@@ -145,53 +147,69 @@ struct ContentView: View {
                     }
                     Spacer()
                 } else {
-                    List(vm.filteredItems) { item in
-                        NavigationLink {
-                            ItemDetailView(country: item.ref.name)
-                                .onAppear {
-                                    // Guardar último país visitado
-                                    vm.saveLastCountry(item.ref.name)
-                                }
-                        } label: {
-                            HStack(spacing: 12) {
-                                // Nombre del país
-                                Text(item.ref.name)
-                                    .font(.headline)
-                                    .foregroundColor(.blue)
-                                
-                                // Casos y muertes en columnas
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack(spacing: 6) {
-                                        Text("Casos: \(formatNumber(item.cases))")
-                                            .font(.subheadline)
-                                            .foregroundColor(.black)
+                    ZStack {
+                        List(vm.filteredItems) { item in
+                            NavigationLink {
+                                ItemDetailView(country: item.ref.name)
+                                    .onAppear {
+                                        // Guardar último país visitado
+                                        vm.saveLastCountry(item.ref.name)
+                                    }
+                            } label: {
+                                HStack(spacing: 12) {
+                                    // Nombre del país
+                                    Text(item.ref.name)
+                                        .font(.headline)
+                                        .foregroundColor(.blue)
+                                    
+                                    // Casos y muertes en columnas
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack(spacing: 6) {
+                                            Text("Casos: \(formatNumber(item.cases))")
+                                                .font(.subheadline)
+                                                .foregroundColor(.black)
+                                            
+                                            if item.newCases > 0 {
+                                                Text("+\(formatNumber(item.newCases))")
+                                                    .font(.caption)
+                                                    .foregroundColor(.green)
+                                            }
+                                        }
                                         
-                                        if item.newCases > 0 {
-                                            Text("+\(formatNumber(item.newCases))")
-                                                .font(.caption)
-                                                .foregroundColor(.green)
+                                        HStack(spacing: 6) {
+                                            Text("Muertes: \(formatNumber(item.deaths))")
+                                                .font(.subheadline)
+                                                .foregroundColor(.black)
+                                            
+                                            if item.newDeaths > 0 {
+                                                Text("+\(formatNumber(item.newDeaths))")
+                                                    .font(.caption)
+                                                    .foregroundColor(.red)
+                                            }
                                         }
                                     }
                                     
-                                    HStack(spacing: 6) {
-                                        Text("Muertes: \(formatNumber(item.deaths))")
-                                            .font(.subheadline)
-                                            .foregroundColor(.black)
-                                        
-                                        if item.newDeaths > 0 {
-                                            Text("+\(formatNumber(item.newDeaths))")
-                                                .font(.caption)
-                                                .foregroundColor(.red)
-                                        }
-                                    }
+                                    Spacer()
                                 }
-                                
-                                Spacer()
+                                .padding(.vertical, 8)
                             }
-                            .padding(.vertical, 8)
+                        }
+                        .listStyle(PlainListStyle())
+                        
+                        // NavigationLink invisible para navegación automática
+                        if let country = navigateToCountry {
+                            NavigationLink(
+                                destination: ItemDetailView(country: country)
+                                    .onAppear {
+                                        vm.saveLastCountry(country)
+                                    },
+                                isActive: $shouldNavigateToLastCountry
+                            ) {
+                                EmptyView()
+                            }
+                            .hidden()
                         }
                     }
-                    .listStyle(PlainListStyle())
                 }
             }
             .navigationTitle("COVID-19")
@@ -204,7 +222,20 @@ struct ContentView: View {
         }
         .onAppear {
             if vm.items.isEmpty {
-                Task { await vm.loadItems() }
+                // Verificar si hay un último país guardado para navegación automática
+                if let lastCountry = vm.getLastCountry() {
+                    navigateToCountry = lastCountry
+                }
+                Task { 
+                    await vm.loadItems()
+                    
+                    // Activar navegación después de cargar
+                    if let country = navigateToCountry, !vm.items.isEmpty {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            shouldNavigateToLastCountry = true
+                        }
+                    }
+                }
             }
         }
     }
