@@ -7,13 +7,13 @@ struct ItemCatalog: Codable {
 }
 
 // Ítem "ligero" de la lista (país con datos agregados)
-struct ItemRef: Codable {
+struct ItemRef: Codable, Equatable {
     var name: String // Nombre del país
     var url: String // URL para obtener el detalle del país
 }
 
 // Modelo que usa la UI
-struct ItemBase: Identifiable {
+struct ItemBase: Identifiable, Equatable {
     var id: String // Nombre del país
     var ref: ItemRef
     var detail: ItemDetail?
@@ -21,6 +21,14 @@ struct ItemBase: Identifiable {
     var deaths: Int // Muertes totales para la fecha seleccionada
     var newCases: Int // Casos nuevos
     var newDeaths: Int // Muertes nuevas
+    
+    static func == (lhs: ItemBase, rhs: ItemBase) -> Bool {
+        return lhs.id == rhs.id &&
+               lhs.cases == rhs.cases &&
+               lhs.deaths == rhs.deaths &&
+               lhs.newCases == rhs.newCases &&
+               lhs.newDeaths == rhs.newDeaths
+    }
 }
 
 // Detalle del ítem (datos completos de un país)
