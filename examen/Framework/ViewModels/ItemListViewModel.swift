@@ -9,6 +9,8 @@ class ItemListViewModel: ObservableObject {
     @Published var selectedDate: String = "2023-03-09" // Última actualización conocida de la API
     @Published var hasError = false
     @Published var errorMessage = ""
+    @Published var totalGlobalCases = 0
+    @Published var totalGlobalDeaths = 0
     
     var listReq: ItemListRequirementProtocol
     var detailReq: ItemDetailRequirementProtocol
@@ -78,6 +80,10 @@ class ItemListViewModel: ObservableObject {
             )
             self.items.append(item)
         }
+        
+        // Calcular totales globales
+        self.totalGlobalCases = self.items.reduce(0) { $0 + $1.cases }
+        self.totalGlobalDeaths = self.items.reduce(0) { $0 + $1.deaths }
         
         self.filteredItems = self.items
         isLoading = false

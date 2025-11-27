@@ -36,7 +36,8 @@ class NetworkAPIService {
         return nil
     }
 
-    func getItemDetail(url: URL) async -> ItemDetail? {
+    // Obtener datos históricos (series temporales) para un país específico
+    func getHistoricalData(url: URL, type: String) async -> [StatPair]? {
         let response = await AF.request(url, method: .get, headers: headers)
             .validate()
             .serializingData()
@@ -48,55 +49,39 @@ class NetworkAPIService {
                 let countries = try JSONDecoder().decode([CovidCountryResponse].self, from: data)
                 
                 // Agregar todos los datos de todas las regiones del país
-                var allCases: [String: Int] = [:]
-                var allDeaths: [String: Int] = [:]
-                let countryName = countries.first?.country ?? ""
+                var allData: [String: Int] = [:]
                 
                 for countryData in countries {
-                    // Sumar casos de todas las regiones por fecha
-                    if let cases = countryData.cases {
+                    if type == "cases", let cases = countryData.cases {
+                        // Sumar casos de todas las regiones por fecha
                         for (date, caseData) in cases {
-                            allCases[date, default: 0] += caseData.total
+                            allData[date, default: 0] += caseData.total
                         }
-                    }
-                    
-                    // Sumar muertes de todas las regiones por fecha
-                    if let deaths = countryData.deaths {
+                    } else if type == "deaths", let deaths = countryData.deaths {
+                        // Sumar muertes de todas las regiones por fecha
                         for (date, deathData) in deaths {
-                            allDeaths[date, default: 0] += deathData.total
+                            allData[date, default: 0] += deathData.total
                         }
                     }
                 }
                 
                 // Convertir a StatPair ordenados por fecha
-                let stats = allCases.keys.sorted().map { date in
-                    StatPair(name: date, value: allCases[date] ?? 0)
+                let stats = allData.keys.sorted().map { date in
+                    StatPair(name: date, value: allData[date] ?? 0)
                 }
                 
-                let deathStats = allDeaths.keys.sorted().map { date in
-                    StatPair(name: date, value: allDeaths[date] ?? 0)
-                }
-                
-                return ItemDetail(
-                    id: countryName,
-                    title: countryName,
-                    description: "Datos de COVID-19",
-                    media: nil,
-                    attributes: [
-                        NamedValue(name: "País", value: countryName),
-                        NamedValue(name: "Total de datos", value: "\(stats.count) días")
-                    ],
-                    stats: stats,
-                    deathStats: deathStats
-                )
+                return stats
                 
             } catch {
-                debugPrint("Error decoding detail: \(error)")
+                debugPrint("Error decoding historical data: \(error)")
+                if let str = String(data: data, encoding: .utf8) {
+                    debugPrint("Response: \(str.prefix(500))")
+                }
                 return nil
             }
             
         case .failure(let err):
-            debugPrint(err.localizedDescription)
+            debugPrint("Error fetching historical data: \(err.localizedDescription)")
             return nil
         }
     }

@@ -59,6 +59,49 @@ struct ContentView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 8)
                 
+                // Totales Globales
+                if !vm.isLoading && !vm.hasError && !vm.items.isEmpty {
+                    VStack(spacing: 12) {
+                        Text("Totales Globales")
+                            .font(.caption.bold())
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Total Casos")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text(formatNumber(vm.totalGlobalCases))
+                                    .font(.title3.bold())
+                                    .foregroundColor(.blue)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(Color(.systemBackground))
+                            .cornerRadius(12)
+                            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+                            
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Total Muertes")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text(formatNumber(vm.totalGlobalDeaths))
+                                    .font(.title3.bold())
+                                    .foregroundColor(.red)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(Color(.systemBackground))
+                            .cornerRadius(12)
+                            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 12)
+                    .background(Color(UIColor.systemGroupedBackground))
+                }
+                
                 Divider()
                 
                 if vm.isLoading {
@@ -147,7 +190,7 @@ struct ContentView: View {
                     .listStyle(PlainListStyle())
                 }
             }
-            .navigationTitle("COVID-19 Global")
+            .navigationTitle("COVID-19")
             .navigationBarTitleDisplayMode(.large)
         }
         .sheet(isPresented: $showDatePicker) {

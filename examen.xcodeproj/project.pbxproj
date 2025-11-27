@@ -10,7 +10,6 @@
 		F2E1AF402ED8FC4D008C51DE /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = F2E1AF3F2ED8FC4D008C51DE /* SDWebImageSwiftUI */; };
 		F2E1AF422ED8FC51008C51DE /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = F2E1AF412ED8FC51008C51DE /* Alamofire */; };
 		F2E1AF442ED8FC53008C51DE /* FlowStacks in Frameworks */ = {isa = PBXBuildFile; productRef = F2E1AF432ED8FC53008C51DE /* FlowStacks */; };
-
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -73,7 +72,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				F2E1AF402ED8FC4D008C51DE /* SDWebImageSwiftUI in Frameworks */,
-
 				F2E1AF422ED8FC51008C51DE /* Alamofire in Frameworks */,
 				F2E1AF442ED8FC53008C51DE /* FlowStacks in Frameworks */,
 			);
@@ -148,7 +146,6 @@
 				F2E1AF3F2ED8FC4D008C51DE /* SDWebImageSwiftUI */,
 				F2E1AF412ED8FC51008C51DE /* Alamofire */,
 				F2E1AF432ED8FC53008C51DE /* FlowStacks */,
-
 			);
 			productName = examen;
 			productReference = F2E1AEDA2ED8F54B008C51DE /* examen.app */;
@@ -656,7 +653,6 @@
 			package = F2E1AF3B2ED8FC18008C51DE /* XCRemoteSwiftPackageReference "FlowStacks" */;
 			productName = FlowStacks;
 		};
-
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F2E1AED22ED8F54B008C51DE /* Project object */;

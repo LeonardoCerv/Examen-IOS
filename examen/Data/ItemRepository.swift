@@ -60,8 +60,31 @@ class ItemRepository: ItemAPIProtocol {
     }
     
     func getItemDetail(country: String) async -> ItemDetail? {
-        let urlStr = "\(Api.base)\(Api.routes.covid)?country=\(country.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? country)"
-        guard let url = URL(string: urlStr) else { return nil }
-        return await nservice.getItemDetail(url: url)
+        // Hacer dos llamadas: una para cases y otra para deaths
+        let casesUrlStr = "\(Api.base)\(Api.routes.covid)?country=\(country.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? country)&type=cases"
+        let deathsUrlStr = "\(Api.base)\(Api.routes.covid)?country=\(country.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? country)&type=deaths"
+        
+        guard let casesUrl = URL(string: casesUrlStr),
+              let deathsUrl = URL(string: deathsUrlStr) else { return nil }
+        
+        async let casesData = nservice.getHistoricalData(url: casesUrl, type: "cases")
+        async let deathsData = nservice.getHistoricalData(url: deathsUrl, type: "deaths")
+        
+        guard let cases = await casesData,
+              let deaths = await deathsData else { return nil }
+        
+        // Combinar ambos en un ItemDetail
+        return ItemDetail(
+            id: country,
+            title: country,
+            description: "Datos de COVID-19",
+            media: nil,
+            attributes: [
+                NamedValue(name: "País", value: country),
+                NamedValue(name: "Total de datos", value: "\(cases.count) días")
+            ],
+            stats: cases,
+            deathStats: deaths
+        )
     }
 }

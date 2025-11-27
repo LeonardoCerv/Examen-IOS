@@ -9,12 +9,11 @@ struct ItemDetailView: View {
     @StateObject private var vm = ItemDetailViewModel()
     @State private var startDate = Date()
     @State private var endDate = Date()
-    @State private var selectedDataType: DataType = .cases
+    @State private var selectedTab: GraphTab = .cases
     
-    enum DataType: String, CaseIterable, Identifiable {
+    enum GraphTab: String, CaseIterable {
         case cases = "Casos"
         case deaths = "Muertes"
-        var id: String { self.rawValue }
     }
     
     let dateFormatter: DateFormatter = {
@@ -62,165 +61,157 @@ struct ItemDetailView: View {
                         Text("Datos de COVID-19")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+                        
+                        // Totales históricos (última entrada completa)
+                        HStack(spacing: 16) {
+                            if let lastCase = vm.allCaseStats?.last {
+                                HStack(spacing: 4) {
+                                    Text("Total histórico casos:")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text(formatNumber(lastCase.value))
+                                        .font(.caption.bold())
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                            
+                            if let lastDeath = vm.allDeathStats?.last {
+                                HStack(spacing: 4) {
+                                    Text("Muertes:")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text(formatNumber(lastDeath.value))
+                                        .font(.caption.bold())
+                                        .foregroundColor(.red)
+                                }
+                            }
+                        }
                     }
                     .padding(.horizontal)
                     .padding(.top)
                     
-                    // Summary Cards
-                    HStack(spacing: 12) {
-                        if let lastCaseStat = vm.lastCaseStat {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Total Casos")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.8))
-                                Text(formatNumber(lastCaseStat.value))
-                                    .font(.title2.bold())
-                                    .foregroundColor(.white)
-                                Text(lastCaseStat.name)
-                                    .font(.caption2)
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
-                            .background(LinearGradient(colors: [.blue, .cyan], startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .cornerRadius(12)
-                            .shadow(radius: 4)
-                        }
-                        
-                        if let lastDeathStat = vm.lastDeathStat {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Total Muertes")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.8))
-                                Text(formatNumber(lastDeathStat.value))
-                                    .font(.title2.bold())
-                                    .foregroundColor(.white)
-                                Text(lastDeathStat.name)
-                                    .font(.caption2)
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
-                            .background(LinearGradient(colors: [.red, .orange], startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .cornerRadius(12)
-                            .shadow(radius: 4)
-                        }
-                    }
-                    .padding(.horizontal)
-                    
-                    Divider().padding(.horizontal)
-                    
-                    // Selector de tipo de datos
-                    Picker("Tipo de Datos", selection: $selectedDataType) {
-                        Text("Casos").tag(DataType.cases)
-                        Text("Muertes").tag(DataType.deaths)
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal)
-                    .onChange(of: selectedDataType) { _ in
-                        vm.filterStats(start: startDate, end: endDate)
-                    }
-                    
-                    // Filtro de Fechas
+                    // Filtro de Fechas - diseño limpio
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Rango de Fechas para Gráfica")
-                            .font(.headline)
-                        
                         HStack {
-                            VStack(alignment: .leading, spacing: 4) {
+                            Text("Rango de Fechas")
+                                .font(.headline)
+                            
+                            Spacer()
+                            
+                            Button {
+                                vm.filterStats(start: startDate, end: endDate)
+                            } label: {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.body)
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                        
+                        HStack(spacing: 16) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text("Desde")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                                 DatePicker("", selection: $startDate, in: ...endDate, displayedComponents: .date)
                                     .labelsHidden()
+                                    .datePickerStyle(.compact)
                             }
                             
-                            Spacer()
+                            Divider()
+                                .frame(height: 40)
                             
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text("Hasta")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                                 DatePicker("", selection: $endDate, in: startDate...Date(), displayedComponents: .date)
                                     .labelsHidden()
+                                    .datePickerStyle(.compact)
                             }
-                            
-                            Spacer()
-                            
-                            Button("Actualizar") {
-                                vm.filterStats(start: startDate, end: endDate)
-                            }
-                            .buttonStyle(.borderedProminent)
                         }
                     }
                     .padding()
-                    .background(Color.gray.opacity(0.1))
+                    .background(Color(.systemBackground))
                     .cornerRadius(12)
+                    .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                     .padding(.horizontal)
                     
-                    // Gráfica
-                    let currentStats = selectedDataType == .cases ? vm.filteredCaseStats : vm.filteredDeathStats
+                    // Summary Cards - Total en el periodo seleccionado
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Casos en Periodo")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(formatNumber(totalCasesInPeriod()))
+                                .font(.title3.bold())
+                                .foregroundColor(.blue)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(Color(.systemBackground))
+                        .cornerRadius(12)
+                        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+                        
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Muertes en Periodo")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(formatNumber(totalDeathsInPeriod()))
+                                .font(.title3.bold())
+                                .foregroundColor(.red)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(Color(.systemBackground))
+                        .cornerRadius(12)
+                        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+                    }
+                    .padding(.horizontal)
                     
-                    if !currentStats.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Evolución de \(selectedDataType.rawValue)")
+                    Divider().padding(.horizontal)
+                    
+                    // Gráficas con Tabs
+                    if !vm.filteredCaseStats.isEmpty || !vm.filteredDeathStats.isEmpty {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Evolución Temporal")
                                 .font(.title3.bold())
                                 .padding(.horizontal)
                             
-                            // Estadísticas del rango
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text("Mínimo")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    Text(formatNumber(currentStats.map{$0.value}.min() ?? 0))
-                                        .font(.headline)
-                                }
-                                Spacer()
-                                VStack(alignment: .leading) {
-                                    Text("Máximo")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    Text(formatNumber(currentStats.map{$0.value}.max() ?? 0))
-                                        .font(.headline)
-                                }
-                                Spacer()
-                                VStack(alignment: .leading) {
-                                    Text("Promedio")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    Text(formatNumber(vm.averageValue(currentStats)))
-                                        .font(.headline)
+                            // Tab Picker
+                            Picker("Tipo de Gráfica", selection: $selectedTab) {
+                                ForEach(GraphTab.allCases, id: \.self) { tab in
+                                    Text(tab.rawValue).tag(tab)
                                 }
                             }
-                            .padding()
-                            .background(Color.white)
-                            .cornerRadius(8)
-                            .shadow(color: .black.opacity(0.05), radius: 4)
+                            .pickerStyle(.segmented)
                             .padding(.horizontal)
                             
-                            // Gráfica de línea
+                            // Gráfica según tab seleccionado
                             if #available(iOS 16.0, *) {
                                 Chart {
-                                    ForEach(currentStats, id: \.name) { stat in
-                                        if let date = dateFormatter.date(from: stat.name) {
-                                            LineMark(
-                                                x: .value("Fecha", date),
-                                                y: .value(selectedDataType.rawValue, stat.value)
-                                            )
-                                            .foregroundStyle(selectedDataType == .cases ? Color.blue : Color.red)
-                                            .interpolationMethod(.catmullRom)
-                                            
-                                            AreaMark(
-                                                x: .value("Fecha", date),
-                                                y: .value(selectedDataType.rawValue, stat.value)
-                                            )
-                                            .foregroundStyle(
-                                                selectedDataType == .cases ?
-                                                    Color.blue.opacity(0.1) :
-                                                    Color.red.opacity(0.1)
-                                            )
-                                            .interpolationMethod(.catmullRom)
+                                    if selectedTab == .cases {
+                                        // Gráfica de casos
+                                        ForEach(vm.filteredCaseStats, id: \.name) { stat in
+                                            if let date = dateFormatter.date(from: stat.name) {
+                                                LineMark(
+                                                    x: .value("Fecha", date),
+                                                    y: .value("Casos", stat.value)
+                                                )
+                                                .foregroundStyle(Color.blue)
+                                                .interpolationMethod(.catmullRom)
+                                            }
+                                        }
+                                    } else {
+                                        // Gráfica de muertes
+                                        ForEach(vm.filteredDeathStats, id: \.name) { stat in
+                                            if let date = dateFormatter.date(from: stat.name) {
+                                                LineMark(
+                                                    x: .value("Fecha", date),
+                                                    y: .value("Muertes", stat.value)
+                                                )
+                                                .foregroundStyle(Color.red)
+                                                .interpolationMethod(.catmullRom)
+                                            }
                                         }
                                     }
                                 }
@@ -232,40 +223,14 @@ struct ItemDetailView: View {
                                 .padding(.horizontal)
                             } else {
                                 // Fallback para iOS < 16
-                                VStack(spacing: 8) {
-                                    ForEach(currentStats.prefix(20), id: \.name) { s in
-                                        HStack(spacing: 8) {
-                                            Text(formatDate(s.name))
-                                                .font(.caption2)
-                                                .frame(width: 70, alignment: .leading)
-                                                .foregroundColor(.secondary)
-                                            
-                                            GeometryReader { geo in
-                                                ZStack(alignment: .leading) {
-                                                    RoundedRectangle(cornerRadius: 4)
-                                                        .fill(Color.gray.opacity(0.1))
-                                                        .frame(height: 20)
-                                                    
-                                                    let maxVal = Double(currentStats.map{$0.value}.max() ?? 1)
-                                                    let width = maxVal > 0 ? CGFloat(s.value) / CGFloat(maxVal) * geo.size.width : 0
-                                                    
-                                                    RoundedRectangle(cornerRadius: 4)
-                                                        .fill(selectedDataType == .cases ? Color.blue : Color.red)
-                                                        .frame(width: max(2, width), height: 20)
-                                                }
-                                            }
-                                            .frame(height: 20)
-                                            
-                                            Text(formatNumber(s.value))
-                                                .font(.caption.bold())
-                                                .frame(width: 70, alignment: .trailing)
-                                        }
-                                    }
+                                VStack(spacing: 12) {
+                                    Text("Gráficas no disponibles en esta versión de iOS")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
                                 }
                                 .padding()
                                 .background(Color.white)
                                 .cornerRadius(12)
-                                .shadow(color: .black.opacity(0.05), radius: 8)
                                 .padding(.horizontal)
                             }
                         }
@@ -299,6 +264,32 @@ struct ItemDetailView: View {
         }
     }
     
+    func totalCasesInPeriod() -> Int {
+        // Sumar todos los casos nuevos en el periodo
+        return vm.filteredCaseStats.reduce(0) { total, stat in
+            // Calcular casos nuevos (diferencia con el día anterior)
+            if let index = vm.filteredCaseStats.firstIndex(where: { $0.name == stat.name }),
+               index > 0 {
+                let previous = vm.filteredCaseStats[index - 1].value
+                return total + (stat.value - previous)
+            }
+            return total
+        }
+    }
+    
+    func totalDeathsInPeriod() -> Int {
+        // Sumar todas las muertes nuevas en el periodo
+        return vm.filteredDeathStats.reduce(0) { total, stat in
+            // Calcular muertes nuevas (diferencia con el día anterior)
+            if let index = vm.filteredDeathStats.firstIndex(where: { $0.name == stat.name }),
+               index > 0 {
+                let previous = vm.filteredDeathStats[index - 1].value
+                return total + (stat.value - previous)
+            }
+            return total
+        }
+    }
+    
     func initializeDates() {
         if let stats = vm.allCaseStats, !stats.isEmpty {
             let sorted = stats.sorted { $0.name < $1.name }
@@ -323,78 +314,6 @@ struct ItemDetailView: View {
         let displayFormatter = DateFormatter()
         displayFormatter.dateFormat = "dd MMM yy"
         return displayFormatter.string(from: date)
-    }
-}
-
-// ViewModel para ItemDetailView
-class ItemDetailViewModel: ObservableObject {
-    @Published var allCaseStats: [StatPair]?
-    @Published var allDeathStats: [StatPair]?
-    @Published var filteredCaseStats: [StatPair] = []
-    @Published var filteredDeathStats: [StatPair] = []
-    @Published var lastCaseStat: StatPair?
-    @Published var lastDeathStat: StatPair?
-    @Published var isLoading = false
-    @Published var hasError = false
-    @Published var errorMessage = ""
-    
-    var detailReq: ItemDetailRequirementProtocol
-    
-    let dateFormatter: DateFormatter = {
-        let df = DateFormatter()
-        df.dateFormat = "yyyy-MM-dd"
-        return df
-    }()
-    
-    init(detailReq: ItemDetailRequirementProtocol = ItemDetailRequirement.shared) {
-        self.detailReq = detailReq
-    }
-    
-    @MainActor
-    func loadCountryData(country: String) async {
-        isLoading = true
-        hasError = false
-        errorMessage = ""
-        
-        let detail = await detailReq.getItemDetail(country: country)
-        
-        guard let detail = detail else {
-            isLoading = false
-            hasError = true
-            errorMessage = "No se pudieron cargar los datos de \(country). Verifica el nombre e intenta nuevamente."
-            return
-        }
-        
-        allCaseStats = detail.stats?.sorted { $0.name < $1.name }
-        allDeathStats = detail.deathStats?.sorted { $0.name < $1.name }
-        
-        lastCaseStat = allCaseStats?.last
-        lastDeathStat = allDeathStats?.last
-        
-        isLoading = false
-    }
-    
-    @MainActor
-    func filterStats(start: Date, end: Date) {
-        if let stats = allCaseStats {
-            filteredCaseStats = stats.filter { stat in
-                guard let date = dateFormatter.date(from: stat.name) else { return false }
-                return date >= start && date <= end
-            }
-        }
-        
-        if let stats = allDeathStats {
-            filteredDeathStats = stats.filter { stat in
-                guard let date = dateFormatter.date(from: stat.name) else { return false }
-                return date >= start && date <= end
-            }
-        }
-    }
-    
-    func averageValue(_ stats: [StatPair]) -> Int {
-        guard !stats.isEmpty else { return 0 }
-        let sum = stats.reduce(0) { $0 + $1.value }
-        return sum / stats.count
     }
 }
 
