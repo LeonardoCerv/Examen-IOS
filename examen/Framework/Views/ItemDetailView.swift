@@ -54,119 +54,62 @@ struct ItemDetailView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.top, 100)
                 } else {
-                    // Header
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(country)
-                            .font(.largeTitle.bold())
-                        Text("Datos de COVID-19")
-                            .font(.subheadline)
+                    // Filtro de Fechas - estilo similar a lista de países
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Rango de Fechas")
+                            .font(.subheadline.bold())
                             .foregroundColor(.secondary)
                         
-                        // Totales históricos (última entrada completa)
-                        HStack(spacing: 16) {
-                            if let lastCase = vm.allCaseStats?.last {
-                                HStack(spacing: 4) {
-                                    Text("Total histórico casos:")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    Text(formatNumber(lastCase.value))
-                                        .font(.caption.bold())
-                                        .foregroundColor(.blue)
+                        HStack(spacing: 12) {
+                            // Fecha inicio
+                            DatePicker("", selection: $startDate, in: ...endDate, displayedComponents: .date)
+                                .labelsHidden()
+                                .datePickerStyle(.compact)
+                                .onChange(of: startDate) { _ in
+                                    vm.filterStats(start: startDate, end: endDate)
                                 }
-                            }
                             
-                            if let lastDeath = vm.allDeathStats?.last {
-                                HStack(spacing: 4) {
-                                    Text("Muertes:")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    Text(formatNumber(lastDeath.value))
-                                        .font(.caption.bold())
-                                        .foregroundColor(.red)
+                            Text("-")
+                                .foregroundColor(.secondary)
+                            
+                            // Fecha fin
+                            DatePicker("", selection: $endDate, in: startDate...Date(), displayedComponents: .date)
+                                .labelsHidden()
+                                .datePickerStyle(.compact)
+                                .onChange(of: endDate) { _ in
+                                    vm.filterStats(start: startDate, end: endDate)
                                 }
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.top)
-                    
-                    // Filtro de Fechas - diseño limpio
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text("Rango de Fechas")
-                                .font(.headline)
                             
                             Spacer()
-                            
-                            Button {
-                                vm.filterStats(start: startDate, end: endDate)
-                            } label: {
-                                Image(systemName: "arrow.clockwise")
-                                    .font(.body)
-                                    .foregroundColor(.blue)
-                            }
-                        }
-                        
-                        HStack(spacing: 16) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Desde")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                DatePicker("", selection: $startDate, in: ...endDate, displayedComponents: .date)
-                                    .labelsHidden()
-                                    .datePickerStyle(.compact)
-                            }
-                            
-                            Divider()
-                                .frame(height: 40)
-                            
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Hasta")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                DatePicker("", selection: $endDate, in: startDate...Date(), displayedComponents: .date)
-                                    .labelsHidden()
-                                    .datePickerStyle(.compact)
-                            }
                         }
                     }
                     .padding()
-                    .background(Color(.systemBackground))
-                    .cornerRadius(12)
-                    .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-                    .padding(.horizontal)
+                    .background(Color(UIColor.systemGroupedBackground))
                     
-                    // Summary Cards - Total en el periodo seleccionado
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Casos en Periodo")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                    // Totales del periodo - alineados a la izquierda
+                    HStack(spacing: 24) {
+                        HStack(spacing: 6) {
+                            Text("Casos:")
+                                .font(.body)
+                                .foregroundColor(.black)
                             Text(formatNumber(totalCasesInPeriod()))
-                                .font(.title3.bold())
-                                .foregroundColor(.blue)
+                                .font(.body.bold())
+                                .foregroundColor(.orange)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
-                        .background(Color(.systemBackground))
-                        .cornerRadius(12)
-                        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                         
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Muertes en Periodo")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                        HStack(spacing: 6) {
+                            Text("Muertes:")
+                                .font(.body)
+                                .foregroundColor(.black)
                             Text(formatNumber(totalDeathsInPeriod()))
-                                .font(.title3.bold())
+                                .font(.body.bold())
                                 .foregroundColor(.red)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
-                        .background(Color(.systemBackground))
-                        .cornerRadius(12)
-                        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+                        
+                        Spacer()
                     }
                     .padding(.horizontal)
+                    .padding(.vertical, 8)
                     
                     Divider().padding(.horizontal)
                     
@@ -197,7 +140,7 @@ struct ItemDetailView: View {
                                                     x: .value("Fecha", date),
                                                     y: .value("Casos", stat.value)
                                                 )
-                                                .foregroundStyle(Color.blue)
+                                                .foregroundStyle(Color.orange)
                                                 .interpolationMethod(.catmullRom)
                                             }
                                         }
@@ -313,6 +256,12 @@ struct ItemDetailView: View {
         guard let date = dateFormatter.date(from: dateString) else { return dateString }
         let displayFormatter = DateFormatter()
         displayFormatter.dateFormat = "dd MMM yy"
+        return displayFormatter.string(from: date)
+    }
+    
+    func formatDateShort(_ date: Date) -> String {
+        let displayFormatter = DateFormatter()
+        displayFormatter.dateFormat = "yyyy-MM-dd"
         return displayFormatter.string(from: date)
     }
 }

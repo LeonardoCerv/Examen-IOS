@@ -10,27 +10,55 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Filtro de fecha
-                HStack {
-                    Text("Fecha:")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    Button {
-                        showDatePicker.toggle()
-                    } label: {
-                        HStack {
-                            Text(vm.selectedDate)
-                                .font(.body)
-                            Image(systemName: "calendar")
+                // Filtro de fecha y totales globales
+                VStack(spacing: 8) {
+                    // Fecha
+                    HStack {
+                        Text("Fecha:")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        
+                        Button {
+                            showDatePicker.toggle()
+                        } label: {
+                            HStack {
+                                Text(vm.selectedDate)
+                                    .font(.body)
+                                Image(systemName: "calendar")
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(8)
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.blue.opacity(0.1))
-                        .cornerRadius(8)
+                        
+                        Spacer()
                     }
                     
-                    Spacer()
+                    // Totales globales
+                    if !vm.isLoading && !vm.hasError && !vm.items.isEmpty {
+                        HStack(spacing: 6) {
+                            Text("Casos globales:")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                            Text(formatNumber(vm.totalGlobalCases))
+                                .font(.body.bold())
+                                .foregroundColor(.blue)
+                            
+                            Spacer()
+                        }
+                        
+                        HStack(spacing: 6) {
+                            Text("Muertes globales:")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                            Text(formatNumber(vm.totalGlobalDeaths))
+                                .font(.body.bold())
+                                .foregroundColor(.blue)
+                            
+                            Spacer()
+                        }
+                    }
                 }
                 .padding()
                 .background(Color(UIColor.systemGroupedBackground))
@@ -43,6 +71,13 @@ struct ContentView: View {
                         .textInputAutocapitalization(.words)
                         .onChange(of: vm.searchText) { _ in
                             vm.filterItems()
+                        }
+                        .onSubmit {
+                            // Al presionar Enter, abrir el primer país de la lista
+                            if let firstCountry = vm.filteredItems.first {
+                                navigateToCountry = firstCountry.ref.name
+                                shouldNavigateToLastCountry = true
+                            }
                         }
                     
                     if !vm.searchText.isEmpty {
@@ -60,49 +95,6 @@ struct ContentView: View {
                 .cornerRadius(10)
                 .padding(.horizontal)
                 .padding(.vertical, 8)
-                
-                // Totales Globales
-                if !vm.isLoading && !vm.hasError && !vm.items.isEmpty {
-                    VStack(spacing: 12) {
-                        Text("Totales Globales")
-                            .font(.caption.bold())
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Total Casos")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(formatNumber(vm.totalGlobalCases))
-                                    .font(.title3.bold())
-                                    .foregroundColor(.blue)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
-                            .background(Color(.systemBackground))
-                            .cornerRadius(12)
-                            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-                            
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Total Muertes")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(formatNumber(vm.totalGlobalDeaths))
-                                    .font(.title3.bold())
-                                    .foregroundColor(.red)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
-                            .background(Color(.systemBackground))
-                            .cornerRadius(12)
-                            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 12)
-                    .background(Color(UIColor.systemGroupedBackground))
-                }
                 
                 Divider()
                 
@@ -156,43 +148,42 @@ struct ContentView: View {
                                         vm.saveLastCountry(item.ref.name)
                                     }
                             } label: {
-                                HStack(spacing: 12) {
-                                    // Nombre del país
+                                HStack(alignment: .top, spacing: 0) {
+                                    // Primera columna: Nombre del país (alineado a la izquierda)
                                     Text(item.ref.name)
-                                        .font(.headline)
-                                        .foregroundColor(.blue)
+                                        .font(.title3.bold())
+                                        .foregroundColor(.black)
+                                        .frame(width: 140, alignment: .leading)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .multilineTextAlignment(.leading)
                                     
-                                    // Casos y muertes en columnas
-                                    VStack(alignment: .leading, spacing: 4) {
+                                    Spacer()
+                                    
+                                    // Segunda columna: Casos (alineados a la izquierda)
+                                    VStack(alignment: .leading, spacing: 6) {
                                         HStack(spacing: 6) {
-                                            Text("Casos: \(formatNumber(item.cases))")
+                                            Text("Casos:")
                                                 .font(.subheadline)
-                                                .foregroundColor(.black)
-                                            
-                                            if item.newCases > 0 {
-                                                Text("+\(formatNumber(item.newCases))")
-                                                    .font(.caption)
-                                                    .foregroundColor(.green)
-                                            }
+                                                .foregroundColor(.secondary)
+                                            Text(formatNumber(item.cases))
+                                                .font(.subheadline.bold())
+                                                .foregroundColor(.blue)
                                         }
                                         
                                         HStack(spacing: 6) {
-                                            Text("Muertes: \(formatNumber(item.deaths))")
+                                            Text("Muertes:")
                                                 .font(.subheadline)
-                                                .foregroundColor(.black)
-                                            
-                                            if item.newDeaths > 0 {
-                                                Text("+\(formatNumber(item.newDeaths))")
-                                                    .font(.caption)
-                                                    .foregroundColor(.red)
-                                            }
+                                                .foregroundColor(.secondary)
+                                            Text(formatNumber(item.deaths))
+                                                .font(.subheadline.bold())
+                                                .foregroundColor(.blue)
                                         }
                                     }
-                                    
-                                    Spacer()
+                                    .frame(minWidth: 140, alignment: .leading)
                                 }
                                 .padding(.vertical, 8)
                             }
+                            .buttonStyle(.plain)
                         }
                         .listStyle(PlainListStyle())
                         
@@ -212,7 +203,7 @@ struct ContentView: View {
                     }
                 }
             }
-            .navigationTitle("COVID-19")
+            .navigationTitle("Datos COVID-19")
             .navigationBarTitleDisplayMode(.large)
         }
         .sheet(isPresented: $showDatePicker) {
