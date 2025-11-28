@@ -43,7 +43,7 @@ struct ContentView: View {
                                 .foregroundColor(.secondary)
                             Text(formatNumber(vm.totalGlobalCases))
                                 .font(.body.bold())
-                                .foregroundColor(.blue)
+                                .foregroundColor(Color(red: 0.0, green: 0.4, blue: 0.7))
                             
                             Spacer()
                         }
@@ -54,7 +54,7 @@ struct ContentView: View {
                                 .foregroundColor(.secondary)
                             Text(formatNumber(vm.totalGlobalDeaths))
                                 .font(.body.bold())
-                                .foregroundColor(.blue)
+                                .foregroundColor(Color(red: 0.7, green: 0.1, blue: 0.1))
                             
                             Spacer()
                         }
@@ -167,7 +167,7 @@ struct ContentView: View {
                                                 .foregroundColor(.secondary)
                                             Text(formatNumber(item.cases))
                                                 .font(.subheadline.bold())
-                                                .foregroundColor(.blue)
+                                                .foregroundColor(Color(red: 0.0, green: 0.4, blue: 0.7))
                                         }
                                         
                                         HStack(spacing: 6) {
@@ -176,7 +176,7 @@ struct ContentView: View {
                                                 .foregroundColor(.secondary)
                                             Text(formatNumber(item.deaths))
                                                 .font(.subheadline.bold())
-                                                .foregroundColor(.blue)
+                                                .foregroundColor(Color(red: 0.7, green: 0.1, blue: 0.1))
                                         }
                                     }
                                     .frame(minWidth: 140, alignment: .leading)
