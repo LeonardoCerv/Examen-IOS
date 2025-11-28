@@ -7,9 +7,13 @@ struct ItemDetailView: View {
     let country: String
     
     @StateObject private var vm = ItemDetailViewModel()
+    @StateObject private var compareVM = CompareCountriesViewModel()
     @State private var startDate = Date()
     @State private var endDate = Date()
     @State private var selectedTab: GraphTab = .cases
+    @State private var showCountryPicker = false
+    @State private var comparisonCountry: String?
+    @State private var searchText = ""
     
     enum GraphTab: String, CaseIterable {
         case cases = "Casos"
@@ -67,6 +71,9 @@ struct ItemDetailView: View {
                                 .datePickerStyle(.compact)
                                 .onChange(of: startDate) { _ in
                                     vm.filterStats(start: startDate, end: endDate)
+                                    if comparisonCountry != nil {
+                                        compareVM.filterStats(start: startDate, end: endDate)
+                                    }
                                 }
                             
                             Text("-")
@@ -78,6 +85,9 @@ struct ItemDetailView: View {
                                 .datePickerStyle(.compact)
                                 .onChange(of: endDate) { _ in
                                     vm.filterStats(start: startDate, end: endDate)
+                                    if comparisonCountry != nil {
+                                        compareVM.filterStats(start: startDate, end: endDate)
+                                    }
                                 }
                             
                             Spacer()
@@ -88,22 +98,57 @@ struct ItemDetailView: View {
                     
                     // Totales del periodo - alineados a la izquierda
                     HStack(spacing: 24) {
-                        HStack(spacing: 6) {
-                            Text("Casos:")
-                                .font(.body)
-                                .foregroundColor(.black)
-                            Text(formatNumber(totalCasesInPeriod()))
-                                .font(.body.bold())
-                                .foregroundColor(.orange)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(country)
+                                .font(.subheadline.bold())
+                                .foregroundColor(.secondary)
+                            
+                            HStack(spacing: 6) {
+                                Text("Casos:")
+                                    .font(.body)
+                                    .foregroundColor(.black)
+                                Text(formatNumber(totalCasesInPeriod()))
+                                    .font(.body.bold())
+                                    .foregroundColor(Color(red: 0.0, green: 0.4, blue: 0.7))
+                            }
+                            
+                            HStack(spacing: 6) {
+                                Text("Muertes:")
+                                    .font(.body)
+                                    .foregroundColor(.black)
+                                Text(formatNumber(totalDeathsInPeriod()))
+                                    .font(.body.bold())
+                                    .foregroundColor(Color(red: 0.7, green: 0.1, blue: 0.1))
+                            }
                         }
                         
-                        HStack(spacing: 6) {
-                            Text("Muertes:")
-                                .font(.body)
-                                .foregroundColor(.black)
-                            Text(formatNumber(totalDeathsInPeriod()))
-                                .font(.body.bold())
-                                .foregroundColor(.red)
+                        // Comparación (si está activa)
+                        if let compareCountry = comparisonCountry {
+                            Divider()
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(compareCountry)
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(.secondary)
+                                
+                                HStack(spacing: 6) {
+                                    Text("Casos:")
+                                        .font(.body)
+                                        .foregroundColor(.black)
+                                    Text(formatNumber(compareVM.country2TotalCases))
+                                        .font(.body.bold())
+                                        .foregroundColor(Color(red: 0.0, green: 0.4, blue: 0.7).opacity(0.6))
+                                }
+                                
+                                HStack(spacing: 6) {
+                                    Text("Muertes:")
+                                        .font(.body)
+                                        .foregroundColor(.black)
+                                    Text(formatNumber(compareVM.country2TotalDeaths))
+                                        .font(.body.bold())
+                                        .foregroundColor(Color(red: 0.7, green: 0.1, blue: 0.1).opacity(0.6))
+                                }
+                            }
                         }
                         
                         Spacer()
@@ -133,27 +178,59 @@ struct ItemDetailView: View {
                             if #available(iOS 16.0, *) {
                                 Chart {
                                     if selectedTab == .cases {
-                                        // Gráfica de casos
+                                        // Gráfica de casos país principal
                                         ForEach(vm.filteredCaseStats, id: \.name) { stat in
                                             if let date = dateFormatter.date(from: stat.name) {
                                                 LineMark(
                                                     x: .value("Fecha", date),
-                                                    y: .value("Casos", stat.value)
+                                                    y: .value("Casos", stat.value),
+                                                    series: .value("País", country)
                                                 )
-                                                .foregroundStyle(Color.orange)
+                                                .foregroundStyle(Color(red: 0.0, green: 0.4, blue: 0.7))
                                                 .interpolationMethod(.catmullRom)
                                             }
                                         }
+                                        
+                                        // Gráfica de casos país comparación
+                                        if let compareCountry = comparisonCountry {
+                                            ForEach(compareVM.filteredCountry2Cases, id: \.name) { stat in
+                                                if let date = dateFormatter.date(from: stat.name) {
+                                                    LineMark(
+                                                        x: .value("Fecha", date),
+                                                        y: .value("Casos", stat.value),
+                                                        series: .value("País", compareCountry)
+                                                    )
+                                                    .foregroundStyle(Color(red: 0.0, green: 0.4, blue: 0.7).opacity(0.5))
+                                                    .interpolationMethod(.catmullRom)
+                                                }
+                                            }
+                                        }
                                     } else {
-                                        // Gráfica de muertes
+                                        // Gráfica de muertes país principal
                                         ForEach(vm.filteredDeathStats, id: \.name) { stat in
                                             if let date = dateFormatter.date(from: stat.name) {
                                                 LineMark(
                                                     x: .value("Fecha", date),
-                                                    y: .value("Muertes", stat.value)
+                                                    y: .value("Muertes", stat.value),
+                                                    series: .value("País", country)
                                                 )
-                                                .foregroundStyle(Color.red)
+                                                .foregroundStyle(Color(red: 0.7, green: 0.1, blue: 0.1))
                                                 .interpolationMethod(.catmullRom)
+                                            }
+                                        }
+                                        
+                                        // Gráfica de muertes país comparación
+                                        if let compareCountry = comparisonCountry {
+                                            ForEach(compareVM.filteredCountry2Deaths, id: \.name) { stat in
+                                                if let date = dateFormatter.date(from: stat.name) {
+                                                    LineMark(
+                                                        x: .value("Fecha", date),
+                                                        y: .value("Muertes", stat.value),
+                                                        series: .value("País", compareCountry)
+                                                    )
+                                                    .foregroundStyle(Color(red: 0.7, green: 0.1, blue: 0.1).opacity(0.5))
+                                                    .interpolationMethod(.catmullRom)
+                                                }
                                             }
                                         }
                                     }
@@ -164,6 +241,28 @@ struct ItemDetailView: View {
                                 .cornerRadius(12)
                                 .shadow(color: .black.opacity(0.05), radius: 8)
                                 .padding(.horizontal)
+                                
+                                // Leyenda si hay comparación
+                                if comparisonCountry != nil {
+                                    HStack(spacing: 24) {
+                                        HStack(spacing: 8) {
+                                            Circle()
+                                                .fill(selectedTab == .cases ? Color(red: 0.0, green: 0.4, blue: 0.7) : Color(red: 0.7, green: 0.1, blue: 0.1))
+                                                .frame(width: 12, height: 12)
+                                            Text(country)
+                                                .font(.caption)
+                                        }
+                                        
+                                        HStack(spacing: 8) {
+                                            Circle()
+                                                .fill(selectedTab == .cases ? Color(red: 0.0, green: 0.4, blue: 0.7).opacity(0.5) : Color(red: 0.7, green: 0.1, blue: 0.1).opacity(0.5))
+                                                .frame(width: 12, height: 12)
+                                            Text(comparisonCountry!)
+                                                .font(.caption)
+                                        }
+                                    }
+                                    .padding(.horizontal)
+                                }
                             } else {
                                 // Fallback para iOS < 16
                                 VStack(spacing: 12) {
@@ -192,12 +291,62 @@ struct ItemDetailView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 60)
                     }
+                    
+                    // Botón de comparar/quitar comparación al final
+                    if comparisonCountry == nil {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Button {
+                                showCountryPicker = true
+                            } label: {
+                                HStack {
+                                    Image(systemName: "chart.bar.xaxis")
+                                    Text("Comparar con otro país")
+                                    Spacer()
+                                    Image(systemName: "chevron.down")
+                                }
+                                .font(.body.bold())
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(Color.blue)
+                                .cornerRadius(12)
+                            }
+                            .padding(.horizontal)
+                        }
+                    } else {
+                        Button {
+                            comparisonCountry = nil
+                            compareVM.country2Data = nil
+                        } label: {
+                            HStack {
+                                Image(systemName: "xmark.circle")
+                                Text("Quitar comparación")
+                                Spacer()
+                            }
+                            .font(.body.bold())
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(Color.red)
+                            .cornerRadius(12)
+                        }
+                        .padding(.horizontal)
+                    }
                 }
             }
             .padding(.bottom)
         }
         .navigationTitle(country)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showCountryPicker) {
+            CountryPickerSheetView(selectedCountry: $comparisonCountry, currentCountry: country)
+                .onDisappear {
+                    if let compareCountry = comparisonCountry {
+                        Task {
+                            await compareVM.loadComparisonData(country1: country, country2: compareCountry)
+                            compareVM.filterStats(start: startDate, end: endDate)
+                        }
+                    }
+                }
+        }
         .onAppear {
             Task {
                 await vm.loadCountryData(country: country)
@@ -263,6 +412,84 @@ struct ItemDetailView: View {
         let displayFormatter = DateFormatter()
         displayFormatter.dateFormat = "yyyy-MM-dd"
         return displayFormatter.string(from: date)
+    }
+}
+
+// Vista para seleccionar país a comparar
+struct CountryPickerSheetView: View {
+    @Binding var selectedCountry: String?
+    let currentCountry: String
+    @Environment(\.dismiss) var dismiss
+    @StateObject private var vm = ItemListViewModel()
+    @State private var searchText = ""
+    
+    var filteredCountries: [ItemBase] {
+        let countries = vm.items.filter { $0.ref.name != currentCountry }
+        if searchText.isEmpty {
+            return countries
+        }
+        return countries.filter {
+            $0.ref.name.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                // Search bar
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    TextField("Buscar país...", text: $searchText)
+                        .textInputAutocapitalization(.words)
+                    
+                    if !searchText.isEmpty {
+                        Button {
+                            searchText = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+                .padding(10)
+                .background(Color(UIColor.systemGray6))
+                .cornerRadius(10)
+                .padding()
+                
+                if vm.isLoading {
+                    Spacer()
+                    ProgressView()
+                    Spacer()
+                } else {
+                    List(filteredCountries) { country in
+                        Button {
+                            selectedCountry = country.ref.name
+                            dismiss()
+                        } label: {
+                            HStack {
+                                Text(country.ref.name)
+                                    .font(.body)
+                                    .foregroundColor(.primary)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    .listStyle(.plain)
+                }
+            }
+            .navigationTitle("Seleccionar país")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarItems(trailing: Button("Cancelar") { dismiss() })
+        }
+        .onAppear {
+            if vm.items.isEmpty {
+                Task { await vm.loadItems() }
+            }
+        }
     }
 }
 
